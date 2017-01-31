@@ -1,9 +1,8 @@
 'use strict';
 
-(function() {
+var FetchData;
 
-var ui = (function() {
-
+document.addEventListener('DOMContentLoaded', function () {
   var state = {
     activeMenu: null,
     overlayOn: false
@@ -11,7 +10,13 @@ var ui = (function() {
 
   var nav, openNav, closeNav, navOverlay, subMenuSelectors;
 
-  var prepareApp = function() {
+  FetchData = function () {
+    if (!(this instanceof FetchData)) {
+      return new FetchData();
+    };
+  };
+
+  FetchData.prototype.getJSON = function (url, cb) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
       var OK = 200;
@@ -19,18 +24,30 @@ var ui = (function() {
       if (xhr.readyState === DONE) {
         if (xhr.status === OK) {
           var data = JSON.parse(xhr.response).items;
-          var html = buildMenu(data);
-          document.querySelector('.huge-nav-container').innerHTML = html;
-          attachHandlers();
+          cb(data)
         }
       }
     }
 
-    xhr.open('GET', '/api/nav.json');
+    xhr.open('GET', url);
     xhr.send();
   }
 
-  var buildMenu = function (data, subMenu) {
+  var fetchData = new FetchData();
+
+  //Fetch JSON data, build the menu and attach event handlers;
+  fetchData.getJSON('/api/nav.json', function(data) {
+    var html = buildMenu(data);
+    document.querySelector('.huge-nav-container').innerHTML = html;
+    attachHandlers();
+  })
+
+  /**
+   * Return HTML of menu using JSONP data.
+   * @param {object} data - JSONP data with menu list.
+   * @param {bool} subMenu - Boolean for submenu presence on menu.
+   */
+  function buildMenu(data, subMenu) {
     var listClass = "huge-nav-list",
         linkClass = "huge-nav-link",
         linkClassSubMenu = "huge-nav-link sub-menu";
@@ -44,20 +61,19 @@ var ui = (function() {
     html += '<ul class="' + listClass + '">';
     data.forEach(function(menu, i, arr) {
       html += '<li>';
-      if (menu.items && menu.items.length > 0) { // An array will return 'object'
+      if (menu.items && menu.items.length > 0) {
         if (subMenu) {
           html += '<a class="' + linkClass + '" href="' + menu.url + '">' + menu.label + '</a>';
         } else {
           html += '<a class="' + linkClassSubMenu + '" href="' + menu.url + '">' + menu.label + '</a>';
         }
-        html += buildMenu(menu.items, true); // Submenu found. Calling recursively same method (and wrapping it in a div)
+        html += buildMenu(menu.items, true);
       } else {
         html += '<a class="' + linkClass + '" href="' + menu.url + '">' + menu.label + '</a>';
       }
       html += '</li>';
     })
     html += '</ul>';
-    // html += (isSub)?'</div>':'';
     return html;
   }
 
@@ -84,6 +100,10 @@ var ui = (function() {
     }
   }
 
+  /**
+   * Toggle active menu controlling state of application.
+   * @param {int} index - Index of menu to be activated.
+   */
   var handleMenu = function (index) {
     return function (e) {
       e.preventDefault();
@@ -112,12 +132,10 @@ var ui = (function() {
       if (document.body.scrollWidth > 768)
         toggleOverlay();
     } else if (activeMenu !== index) {
-      console.log('activeMenu !== index')
       openMenuItem(selector)
       closeMenuItem(subMenuSelectors[activeMenu])
       state.activeMenu = index;
     } else if (activeMenu === index) {
-      console.log('activeMenu === index')
       closeMenuItem(selector)
       state.activeMenu = null
       if (document.body.scrollWidth > 768 && state.overlayOn === true)
@@ -142,14 +160,4 @@ var ui = (function() {
     state.overlayOn = !overlayOn
   }
 
-  return {
-    init: function() {
-      prepareApp();
-    }
-  }
-
-})();
-
-ui.init();
-
-})();
+}, false);

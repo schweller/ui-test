@@ -15,7 +15,7 @@
   },
   "private": true,
   "scripts": {
-    "test": "ava",
+    "test": "node test.js",
     "start": "node ./bin/www"
   },
   "dependencies": {
