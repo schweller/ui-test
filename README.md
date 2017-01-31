@@ -15,6 +15,12 @@ Here are the guidelines for this exercise
 $ npm i && npm start
 ```
 
+To run unit tests:
+
+```
+$ npm test
+```
+
 Nice to haves:
 
 * Adherence to accessibility standards
